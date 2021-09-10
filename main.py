@@ -1,25 +1,39 @@
-# from Grid import *
+from Grid import *
 from Mic_array import *
 from GCC import *
 import matplotlib.pyplot as plt
 
-X = np.array([30, 20, 10, 90, 70])
-Y = np.array([10, 80, 30, 40, 25])
-Z = np.array([40, 50, 30, 50, 70])
+grid1 = Grid(x_room = 200, y_room = 300, z_room = 200)
+mic_position = np.array([100,70,0])
+sound_source_positions = np.array([[20,250,180],[100,210,180],[185,180,180],[110,90,180],[170,85,100],
+[20,170,180],[190,100,100],[120,250,60],[85,160,60],[100,100,60]])
+posicion_estimada = np.zeros((10,3))
 
-XD = np.array([[30,20,40],[50,60,70],[60,60,2]])
-print(XD[:,0])
+grid1.place_mic_array(mic_position)
 
-n = ['Pt. 1', 'Pt. 2', 'Pt. 3', 'Pt. 4', 'Pt. 5']
+for i in range(0, 10):
+    start = time.time()                     # PARA CALCULAR TIEMPO; BORRAR AL FINAL
+    signal, fs = grid1.place_sound_source('trumpet.wav', sound_source_positions[i])
+    posicion_estimada[i] = grid1.SRP(signal, grid1.Mic_Array, fs)
+    end = time.time()                                                   # PARA CALCULAR TIEMPO; BORRAR AL FINAL
+    print ("\ncoste computacional: "+str(end-start))                    # PARA CALCULAR TIEMPO; BORRAR AL FINAL
 
 fig = plt.figure()
 ax = plt.axes(projection='3d')
 ax.set_title("Points in Space")
-ax.set_xlim([0, 100])
-ax.set_ylim([0, 100])
-ax.set_zlim([0, 100])
-ax.scatter(X, Y, Z)
+ax.set_xlim([0, grid1.x_room-1])
+ax.set_ylim([0, grid1.y_room-1])
+ax.set_zlim([0, grid1.z_room-1])
 
-for i, txt in enumerate(n):
-    ax.text(X[i],Y[i],Z[i],  '%s' % (txt))
+ax.scatter(sound_source_positions[:,0], sound_source_positions[:,1],  sound_source_positions[:,2])
+ax.scatter(mic_position[0], mic_position[1], mic_position[2])
+ax.scatter(posicion_estimada[:,0], posicion_estimada[:,1], posicion_estimada[:,2])
+
+label_original = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+label_estimation = ['1\' ', '2\' ', '3\' ', '4\' ', '5\' ', '6\' ', '7\' ', '8\' ', '9\' ', '10\' ']
+
+for i, txt in enumerate(label_original):
+    ax.text(sound_source_positions[i],sound_source_positions[i],sound_source_positions[i],  '%s' % (txt))
+    ax.text(posicion_estimada[i],posicion_estimada[i],posicion_estimada[i],  '%s' % label_estimation[i])
+
 plt.show()
