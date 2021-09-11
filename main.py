@@ -2,6 +2,7 @@ from Grid import *
 from Mic_array import *
 from GCC import *
 import matplotlib.pyplot as plt
+import time
 
 grid1 = Grid(x_room = 200, y_room = 300, z_room = 200)
 mic_position = np.array([100,70,0])
