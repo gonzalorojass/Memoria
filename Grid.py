@@ -1,11 +1,7 @@
 import numpy as np
 import wave
-import matplotlib.pyplot as plt
 from Mic_array import *
 from GCC import *
-from decimal import *
-
-import time                            # PARA CALCULAR TIEMPO; BORRAR AL FINAL 
 
 class Grid:
     ####        X,Y,Z se tienen que trabajar en centimetros         ####
