@@ -86,3 +86,46 @@ class Grid:
                         self.potencia[l] = GCC(invXi_Xj, self.points[l], self.Mic_Array, fs)
                         l+=1
         return self.points[np.argmax(abs(self.potencia))] 
+
+
+    def HSRP(
+        self,
+        signal,
+        mic_array,
+        fs
+    ):
+        halfs = np.array([self.x_room/2, self.y_room/2, self.z_room/2])
+        TREE = self.cornerizator(np.array([0,0,0]), halfs)
+        if np.prod(halfs) <= 1000:
+            print("do it one last time only if big enough")
+        invXi_Xj = np.zeros((sum(range(mic_array.mics_n)), signal[0].size))
+        n = 0
+        for i in range(0, mic_array.mics_n-1):
+            for j in range (i+1, mic_array.mics_n):
+                Xi_Xj = np.fft.rfft(signal[i], n = signal[i].size)*np.conj(np.fft.rfft(signal[j], n = signal[j].size))
+                peso = 1/(abs(Xi_Xj))
+                invXi_Xj[n] = np.fft.irfft(Xi_Xj*peso, n = signal[0].size)
+                n += 1
+
+        # PRIMERA ITERACIÓN
+        halfs = np.array([self.x_room/2, self.y_room/2, self.z_room/2])
+
+        TREE = self.cornerizator(np.array([0,0,0]), halfs)
+
+
+        self.potencia[i] = GCC(invXi_Xj, self.points[i], self.Mic_Array, fs)    # USAR DATO DEL NODO
+
+        return self.points[np.argmax(abs(self.potencia))] 
+
+    def cornerizator(
+        self,
+        v0,
+        v1
+    ):
+        esquinas = np.zeros((8,3))
+        for i in range(0,8):
+            l = format(i, '03b')
+            l = np.array([int(l[0]),int(l[1]), int(l[2])])
+            esquinas[i] = v0 + l*v1
+        
+        return esquinas
