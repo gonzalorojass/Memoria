@@ -1,5 +1,6 @@
 import numpy as np
 import wave
+from treelib import Tree, Node
 from Mic_array import *
 from GCC import *
 
@@ -20,6 +21,8 @@ class Grid:
         self.place_mic_array(np.array([20,20,10]))
         self.potencia = np.zeros((self.n))
 
+        self.room_partitions = Tree()
+        self.room_partitions.create_node(identifier="room", data= self.n)
 
     def place_mic_array(
         self, 
@@ -54,70 +57,78 @@ class Grid:
         left = signal[0::2]             # USO DE UN SOLO CANAL
 
         for i in range(0, self.Mic_Array.mics_n):
-
             tau = round(fs*(np.linalg.norm(position-self.Mic_Array.mic_position[i]))/c)
             recieved_signal[i] = left[tau: tau+fs]
 
-        return recieved_signal, fs
-
-    
-    def SRP(
-        self,
-        signal,
-        mic_array,
-        fs
-    ):
-        # AGREGAR RUTINA DE DIVICIÓN DEL ESPACIO
-        invXi_Xj = np.zeros((sum(range(mic_array.mics_n)), signal[0].size))
+        invXi_Xj = np.zeros((sum(range(self.Mic_Array.mics_n)), recieved_signal[0].size))
         n = 0
-        for i in range(0, mic_array.mics_n-1):
-            for j in range (i+1, mic_array.mics_n):
-                Xi_Xj = np.fft.rfft(signal[i], n = signal[i].size)*np.conj(np.fft.rfft(signal[j], n = signal[j].size))
+        for i in range(0, self.Mic_Array.mics_n-1):
+            for j in range (i+1, self.Mic_Array.mics_n):
+                Xi_Xj = np.fft.rfft(recieved_signal[i], n = recieved_signal[i].size)*np.conj(np.fft.rfft(recieved_signal[j], n = recieved_signal[j].size))
                 peso = 1/(abs(Xi_Xj))
-                invXi_Xj[n] = np.fft.irfft(Xi_Xj*peso, n = signal[0].size)
+                invXi_Xj[n] = np.fft.irfft(Xi_Xj*peso, n = recieved_signal[0].size)
                 n += 1
 
-        l = 0
-        while l < self.n:
-            for k in range(0, self.z_room):
-                for j in range(0, self.y_room):
-                    for i in range(0, self.x_room):
-                        self.points[l] = [i,j,k] 
-                        self.potencia[l] = GCC(invXi_Xj, self.points[l], self.Mic_Array, fs)
-                        l+=1
-        return self.points[np.argmax(abs(self.potencia))] 
-
+        return invXi_Xj, fs
 
     def HSRP(
         self,
-        signal,
-        mic_array,
-        fs
+        inverted_signal,
+        parent_id,
+        fs,
+        halfs
     ):
-        halfs = np.array([self.x_room/2, self.y_room/2, self.z_room/2])
-        TREE = self.cornerizator(np.array([0,0,0]), halfs)
+        halfs = np.array([(halfs[0]-1)/2, (halfs[1]-1)/2, (halfs[2]-1)/2])
+        id_potencia_mayor = None
+        potencia_alta = 0
+
+        if self.room_partitions.depth() == 0:
+            esquinas_nodo = self.corners(np.array([0,0,0]), halfs)
+            self.room_partitions.create_node(identifier="1", parent="room",
+            data={
+                "halfs": halfs,
+                "esquinas": self.corners(np.array([0,0,0]), halfs),
+                "potencia": GCC(inverted_signal, esquinas_nodo, self.Mic_Array, fs),
+            })
+
+            for i in range(1,8):
+                esquinas_nodo = self.corners(self.room_partitions.get_node("1").data["esquinas"][i], halfs)
+                self.room_partitions.create_node(identifier=str(i+1), parent="room",
+                data={
+                    "halfs": halfs,
+                    "esquinas": esquinas_nodo,
+                    "potencia": GCC(inverted_signal, esquinas_nodo, self.Mic_Array, fs),
+                })
+
+        else:
+            for i in range(0,8):
+                esquinas_nodo = self.corners(self.room_partitions.get_node(parent_id).data["esquinas"][i], halfs)
+                self.room_partitions.create_node(identifier=parent_id + str(i+1), parent=parent_id,
+                data={
+                    "halfs": halfs,
+                    "esquinas": esquinas_nodo,
+                    "potencia": GCC(inverted_signal, esquinas_nodo, self.Mic_Array, fs),
+                })        
+
+        for hoja in self.room_partitions.leaves():
+            if potencia_alta < hoja.data["potencia"]:
+                potencia_alta = hoja.data["potencia"]
+                id_potencia_mayor = hoja.identifier
+
+        
+        # TODO: CAMBIAR CONDICION PARA QUE NO SE TERMINE SI EXISTE UNA HOJA A NIVEL MAYOR POR RECORRER        
         if np.prod(halfs) <= 1000:
-            print("do it one last time only if big enough")
-        invXi_Xj = np.zeros((sum(range(mic_array.mics_n)), signal[0].size))
-        n = 0
-        for i in range(0, mic_array.mics_n-1):
-            for j in range (i+1, mic_array.mics_n):
-                Xi_Xj = np.fft.rfft(signal[i], n = signal[i].size)*np.conj(np.fft.rfft(signal[j], n = signal[j].size))
-                peso = 1/(abs(Xi_Xj))
-                invXi_Xj[n] = np.fft.irfft(Xi_Xj*peso, n = signal[0].size)
-                n += 1
+            self.room_partitions.show()
+            return id_potencia_mayor
 
-        # PRIMERA ITERACIÓN
-        halfs = np.array([self.x_room/2, self.y_room/2, self.z_room/2])
+        # TODO: DEVOLVER EL PUNTO CENTRAL DEL CUBO
+        else:
+            halfs = self.room_partitions.get_node(id_potencia_mayor).data["halfs"]
+            print(halfs)
+            id_posicion = self.HSRP(inverted_signal, id_potencia_mayor, fs, halfs)
+            return id_posicion
 
-        TREE = self.cornerizator(np.array([0,0,0]), halfs)
-
-
-        self.potencia[i] = GCC(invXi_Xj, self.points[i], self.Mic_Array, fs)    # USAR DATO DEL NODO
-
-        return self.points[np.argmax(abs(self.potencia))] 
-
-    def cornerizator(
+    def corners(
         self,
         v0,
         v1
