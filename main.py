@@ -12,12 +12,6 @@ posicion_estimada = np.zeros((10,3))
 
 grid1.place_mic_array(mic_position)
 
-# start = time.time()                     # PARA CALCULAR TIEMPO; BORRAR AL FINAL
-# signal, fs = grid1.place_sound_source('trumpet.wav', sound_source_positions[0])
-# p = grid1.HSRP(signal,"room", fs, np.array([grid1.x_room, grid1.y_room, grid1.z_room]))
-# print(p)
-# end = time.time()
-
 for i in range(0, 10):
     start = time.time()                     # PARA CALCULAR TIEMPO; BORRAR AL FINAL
     signal, fs = grid1.place_sound_source('trumpet.wav', sound_source_positions[i])
@@ -37,11 +31,11 @@ ax.scatter(sound_source_positions[:,0], sound_source_positions[:,1],  sound_sour
 ax.scatter(mic_position[0], mic_position[1], mic_position[2])
 ax.scatter(posicion_estimada[:,0], posicion_estimada[:,1], posicion_estimada[:,2])
 
-# label_original = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-# label_estimation = ['1\' ', '2\' ', '3\' ', '4\' ', '5\' ', '6\' ', '7\' ', '8\' ', '9\' ', '10\' ']
+label_original = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+label_estimation = ['1\' ', '2\' ', '3\' ', '4\' ', '5\' ', '6\' ', '7\' ', '8\' ', '9\' ', '10\' ']
 
-# for i, txt in enumerate(label_original):
-#     ax.text(sound_source_positions[i],sound_source_positions[i],sound_source_positions[i],  '%s' % (txt))
-#     ax.text(posicion_estimada[i],posicion_estimada[i],posicion_estimada[i],  '%s' % label_estimation[i])
+for i, txt in enumerate(label_original):
+    ax.text(sound_source_positions[i][0],sound_source_positions[i][1],sound_source_positions[i][2],  '%s' % (txt))
+    ax.text(posicion_estimada[i][0],posicion_estimada[i][1],posicion_estimada[i][2],  '%s' % label_estimation[i])
 
 plt.show()

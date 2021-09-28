@@ -6,7 +6,6 @@ from Mic_array import *
 from GCC import *
 
 class Grid:
-    ####        X,Y,Z se tienen que trabajar en centimetros         ####
     def __init__(
         self,
         x_room = 280,
@@ -17,7 +16,7 @@ class Grid:
         self.y_room = y_room + 1
         self.z_room = z_room + 1
 
-        self.n = self.x_room*self.y_room*self.z_room        # CUBO MAS PEQUEÑO 10x10x10 cm POR DEFINIR
+        self.n = self.x_room*self.y_room*self.z_room
         self.points = np.zeros((self.n,3))
         self.place_mic_array(np.array([20,20,10]))
         self.potencia = np.zeros((self.n))
@@ -85,7 +84,7 @@ class Grid:
         fs,
         halves
     ):
-        halves = np.array([(halves[0]-1)/2, (halves[1]-1)/2, (halves[2]-1)/2])
+        halves = np.array([(halves[0])/2, (halves[1])/2, (halves[2])/2])
         id_potencia_mayor = None
         potencia_alta = 0
 
@@ -108,8 +107,9 @@ class Grid:
                 })
 
         else:
+            esquinas_nodo_padre = self.corners(self.temporal_partitions.get_node(parent_id).data["esquinas"][0], halves)
             for i in range(0,8):
-                esquinas_nodo = self.corners(self.temporal_partitions.get_node(parent_id).data["esquinas"][i], halves)
+                esquinas_nodo = self.corners(esquinas_nodo_padre[i], halves)
                 self.temporal_partitions.create_node(identifier=parent_id + str(i+1), parent=parent_id,
                 data={
                     "halves": halves,
@@ -121,20 +121,15 @@ class Grid:
             if potencia_alta < hoja.data["potencia"]:
                 potencia_alta = hoja.data["potencia"]
                 id_potencia_mayor = hoja.identifier
-
-        
-        # TODO: CAMBIAR CONDICION PARA QUE NO SE TERMINE SI EXISTE UNA HOJA A NIVEL MAYOR POR RECORRER        
-        if np.prod(halves) <= 1000:
-            self.temporal_partitions.show()
-            self.room_partitions.show()
+  
+        if np.prod(self.temporal_partitions.get_node(id_potencia_mayor).data["halves"]) <= 1000:
             centro = self.temporal_partitions.get_node(id_potencia_mayor).data["esquinas"][0] + halves
             return id_potencia_mayor, centro
 
-        # TODO: DEVOLVER EL PUNTO CENTRAL DEL CUBO
         else:
             new_halves = self.temporal_partitions.get_node(id_potencia_mayor).data["halves"]
             id_posicion, centro = self.HSRP(inverted_signal, id_potencia_mayor, fs, new_halves)
-            return id_posicion, np.around(centro)
+            return id_posicion, centro
 
     def corners(
         self,
