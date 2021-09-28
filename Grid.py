@@ -1,5 +1,6 @@
 import numpy as np
 import wave
+from copy import deepcopy
 from treelib import Tree, Node
 from Mic_array import *
 from GCC import *
@@ -22,7 +23,13 @@ class Grid:
         self.potencia = np.zeros((self.n))
 
         self.room_partitions = Tree()
-        self.room_partitions.create_node(identifier="room", data= self.n)
+        dimensiones_habitacion =  np.array([x_room, y_room, z_room])
+        esquinas_raiz = self.corners(np.array([0,0,0]), dimensiones_habitacion)
+        self.room_partitions.create_node(identifier="room", data={
+                    "halves": np.array([x_room, y_room, z_room]),
+                    "esquinas": esquinas_raiz,
+                })
+        self.temporal_partitions = deepcopy(self.room_partitions)
 
     def place_mic_array(
         self, 
@@ -76,57 +83,58 @@ class Grid:
         inverted_signal,
         parent_id,
         fs,
-        halfs
+        halves
     ):
-        halfs = np.array([(halfs[0]-1)/2, (halfs[1]-1)/2, (halfs[2]-1)/2])
+        halves = np.array([(halves[0]-1)/2, (halves[1]-1)/2, (halves[2]-1)/2])
         id_potencia_mayor = None
         potencia_alta = 0
 
-        if self.room_partitions.depth() == 0:
-            esquinas_nodo = self.corners(np.array([0,0,0]), halfs)
-            self.room_partitions.create_node(identifier="1", parent="room",
+        if self.temporal_partitions.depth() == 0:
+            esquinas_nodo = self.corners(np.array([0,0,0]), halves)
+            self.temporal_partitions.create_node(identifier="1", parent="room",
             data={
-                "halfs": halfs,
-                "esquinas": self.corners(np.array([0,0,0]), halfs),
+                "halves": halves,
+                "esquinas": self.corners(np.array([0,0,0]), halves),
                 "potencia": GCC(inverted_signal, esquinas_nodo, self.Mic_Array, fs),
             })
 
             for i in range(1,8):
-                esquinas_nodo = self.corners(self.room_partitions.get_node("1").data["esquinas"][i], halfs)
-                self.room_partitions.create_node(identifier=str(i+1), parent="room",
+                esquinas_nodo = self.corners(self.temporal_partitions.get_node("1").data["esquinas"][i], halves)
+                self.temporal_partitions.create_node(identifier=str(i+1), parent="room",
                 data={
-                    "halfs": halfs,
+                    "halves": halves,
                     "esquinas": esquinas_nodo,
                     "potencia": GCC(inverted_signal, esquinas_nodo, self.Mic_Array, fs),
                 })
 
         else:
             for i in range(0,8):
-                esquinas_nodo = self.corners(self.room_partitions.get_node(parent_id).data["esquinas"][i], halfs)
-                self.room_partitions.create_node(identifier=parent_id + str(i+1), parent=parent_id,
+                esquinas_nodo = self.corners(self.temporal_partitions.get_node(parent_id).data["esquinas"][i], halves)
+                self.temporal_partitions.create_node(identifier=parent_id + str(i+1), parent=parent_id,
                 data={
-                    "halfs": halfs,
+                    "halves": halves,
                     "esquinas": esquinas_nodo,
                     "potencia": GCC(inverted_signal, esquinas_nodo, self.Mic_Array, fs),
                 })        
 
-        for hoja in self.room_partitions.leaves():
+        for hoja in self.temporal_partitions.leaves():
             if potencia_alta < hoja.data["potencia"]:
                 potencia_alta = hoja.data["potencia"]
                 id_potencia_mayor = hoja.identifier
 
         
         # TODO: CAMBIAR CONDICION PARA QUE NO SE TERMINE SI EXISTE UNA HOJA A NIVEL MAYOR POR RECORRER        
-        if np.prod(halfs) <= 1000:
+        if np.prod(halves) <= 1000:
+            self.temporal_partitions.show()
             self.room_partitions.show()
-            return id_potencia_mayor
+            centro = self.temporal_partitions.get_node(id_potencia_mayor).data["esquinas"][0] + halves
+            return id_potencia_mayor, centro
 
         # TODO: DEVOLVER EL PUNTO CENTRAL DEL CUBO
         else:
-            halfs = self.room_partitions.get_node(id_potencia_mayor).data["halfs"]
-            print(halfs)
-            id_posicion = self.HSRP(inverted_signal, id_potencia_mayor, fs, halfs)
-            return id_posicion
+            new_halves = self.temporal_partitions.get_node(id_potencia_mayor).data["halves"]
+            id_posicion, centro = self.HSRP(inverted_signal, id_potencia_mayor, fs, new_halves)
+            return id_posicion, np.around(centro)
 
     def corners(
         self,
@@ -140,3 +148,6 @@ class Grid:
             esquinas[i] = v0 + l*v1
         
         return esquinas
+
+    def reset_tree(self):
+        self.temporal_partitions = deepcopy(self.room_partitions)
