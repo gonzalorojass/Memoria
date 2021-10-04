@@ -1,3 +1,4 @@
+from matplotlib.pyplot import margins
 import numpy as np
 import wave
 from copy import deepcopy
@@ -12,38 +13,15 @@ class Grid:
         y_room = 560,
         z_room = 240,
     ):
-        self.x_room = x_room + 1
-        self.y_room = y_room + 1
-        self.z_room = z_room + 1
-
-        self.n = self.x_room*self.y_room*self.z_room
-        self.points = np.zeros((self.n,3))
-        self.place_mic_array(np.array([20,20,10]))
-        self.potencia = np.zeros((self.n))
-
-        self.room_partitions = Tree()
-        dimensiones_habitacion =  np.array([x_room, y_room, z_room])
-        esquinas_raiz = self.corners(np.array([0,0,0]), dimensiones_habitacion)
-        self.room_partitions.create_node(identifier="room", data={
-                    "halves": np.array([x_room, y_room, z_room]),
-                    "esquinas": esquinas_raiz,
-                })
-        self.temporal_partitions = deepcopy(self.room_partitions)
-
-    def place_mic_array(
-        self, 
-        position, 
-    ):
-        self.Mic_Array = MicArray(position)
-
+        self.dimensiones = np.array([x_room, y_room, z_room])
+        self.margin_dimensions = np.array([x_room, y_room, z_room])
 
     def place_sound_source(
         self,
         filename,
         position,
-        # CHUNK,                   # SE USARA ACTUALMENTE 1 SEGUNDO (CHUNK = fs)
     ):
-        if position[0] > self.x_room or position[1] > self.y_room or position[2] > self.z_room:
+        if position[0] > self.dimensiones[0] + 1 or position[1] > self.dimensiones[1] + 1 or position[2] > self.dimensiones[2] + 1:
             print("Posición esta fuera del espacio")
             return
         
@@ -60,7 +38,7 @@ class Grid:
 
         signal = wf.readframes(-1)
         signal = np.frombuffer(signal, dtype=np.int16)   
-        left = signal[0::2]             # USO DE UN SOLO CANAL
+        left = signal[0::2]
 
         for i in range(0, self.Mic_Array.mics_n):
             tau = round(fs*(np.linalg.norm(position-self.Mic_Array.mic_position[i]))/c)
@@ -77,42 +55,45 @@ class Grid:
 
         return invXi_Xj, fs
 
+
     def HSRP(
         self,
         inverted_signal,
         parent_id,
         fs,
-        halves
+        to_divide = None
     ):
-        halves = np.array([(halves[0])/2, (halves[1])/2, (halves[2])/2])
+        if to_divide is None:
+            to_divide = self.margin_dimensions
+        to_divide = np.array([(to_divide[0])/2, (to_divide[1])/2, (to_divide[2])/2])
         id_potencia_mayor = None
         potencia_alta = 0
 
         if self.temporal_partitions.depth() == 0:
-            esquinas_nodo = self.corners(np.array([0,0,0]), halves)
+            esquinas_nodo = self.corners(self.temporal_partitions.get_node("room").data["esquinas"][0], to_divide)
             self.temporal_partitions.create_node(identifier="1", parent="room",
             data={
-                "halves": halves,
-                "esquinas": self.corners(np.array([0,0,0]), halves),
+                "to_divide": to_divide,
+                "esquinas": esquinas_nodo,
                 "potencia": GCC(inverted_signal, esquinas_nodo, self.Mic_Array, fs),
             })
 
             for i in range(1,8):
-                esquinas_nodo = self.corners(self.temporal_partitions.get_node("1").data["esquinas"][i], halves)
+                esquinas_nodo = self.corners(self.temporal_partitions.get_node("1").data["esquinas"][i], to_divide)
                 self.temporal_partitions.create_node(identifier=str(i+1), parent="room",
                 data={
-                    "halves": halves,
+                    "to_divide": to_divide,
                     "esquinas": esquinas_nodo,
                     "potencia": GCC(inverted_signal, esquinas_nodo, self.Mic_Array, fs),
                 })
 
         else:
-            esquinas_nodo_padre = self.corners(self.temporal_partitions.get_node(parent_id).data["esquinas"][0], halves)
+            esquinas_nodo_padre = self.corners(self.temporal_partitions.get_node(parent_id).data["esquinas"][0], to_divide)
             for i in range(0,8):
-                esquinas_nodo = self.corners(esquinas_nodo_padre[i], halves)
+                esquinas_nodo = self.corners(esquinas_nodo_padre[i], to_divide)
                 self.temporal_partitions.create_node(identifier=parent_id + str(i+1), parent=parent_id,
                 data={
-                    "halves": halves,
+                    "to_divide": to_divide,
                     "esquinas": esquinas_nodo,
                     "potencia": GCC(inverted_signal, esquinas_nodo, self.Mic_Array, fs),
                 })        
@@ -122,14 +103,32 @@ class Grid:
                 potencia_alta = hoja.data["potencia"]
                 id_potencia_mayor = hoja.identifier
   
-        if np.prod(self.temporal_partitions.get_node(id_potencia_mayor).data["halves"]) <= 1000:
-            centro = self.temporal_partitions.get_node(id_potencia_mayor).data["esquinas"][0] + halves
+        if np.prod(self.temporal_partitions.get_node(id_potencia_mayor).data["to_divide"]) <= 1000:
+            self.temporal_partitions.show()
+            print(id_potencia_mayor)
+            centro = self.temporal_partitions.get_node(id_potencia_mayor).data["esquinas"][0] + to_divide
             return id_potencia_mayor, centro
 
         else:
-            new_halves = self.temporal_partitions.get_node(id_potencia_mayor).data["halves"]
-            id_posicion, centro = self.HSRP(inverted_signal, id_potencia_mayor, fs, new_halves)
+            new_to_divide = self.temporal_partitions.get_node(id_potencia_mayor).data["to_divide"]
+            id_posicion, centro = self.HSRP(inverted_signal, id_potencia_mayor, fs, new_to_divide)
             return id_posicion, centro
+
+    def place_mic_array(
+    self, 
+    position, 
+    ):
+        self.Mic_Array = MicArray(position)
+        mic_margin = position + np.array([0,50,0])
+        self.margin_dimensions[1] = self.dimensiones[1] - mic_margin[1]
+
+        self.room_partitions = Tree()
+        esquinas_raiz = self.corners(np.array([0,mic_margin[1],0]), self.margin_dimensions)
+        self.room_partitions.create_node(identifier="room", data={
+                    "to_divide": self.margin_dimensions,
+                    "esquinas": esquinas_raiz,
+                })
+        self.temporal_partitions = deepcopy(self.room_partitions)
 
     def corners(
         self,

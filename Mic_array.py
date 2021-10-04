@@ -5,7 +5,7 @@ class MicArray:
     def __init__(
         self,
         center = np.array([0,0,0]),
-        distance_to_center = 30,
+        distance_to_center = 5,
         mics_n = 6
 
     ):
