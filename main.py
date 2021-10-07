@@ -2,46 +2,92 @@ from Grid import *
 from Mic_array import *
 from GCC import *
 import matplotlib.pyplot as plt
-import time
+import pyaudio
+import wave
+import numpy as np
+
+####    INICIALIZACIÓN DE GRILLA     ####
 
 grid1 = Grid(x_room = 200, y_room = 300, z_room = 200)
 mic_position = np.array([100,70,0])
-sound_source_positions = np.array([[20,250,180],[100,210,180],[185,180,180],[110,135,180],[170,150,100],
-[20,170,180],[190,145,100],[120,250,60],[85,160,60],[100,175,60]])
-posicion_estimada = np.zeros((10,3))
-
+posicion_estimada = np.zeros(3)
 grid1.place_mic_array(mic_position)
 
-for i in range(0, 10):
-    start = time.time()                     # PARA CALCULAR TIEMPO; BORRAR AL FINAL
-    signal, fs = grid1.place_sound_source('trumpet.wav', sound_source_positions[i])
-    useless, posicion_estimada[i] = grid1.HSRP(signal,"room", fs)
-    grid1.reset_tree()
-    end = time.time()                                                   # PARA CALCULAR TIEMPO; BORRAR AL FINAL
-    print ("\ncoste computacional: "+str(end-start))                    # PARA CALCULAR TIEMPO; BORRAR AL FINAL
 
-fig = plt.figure()
-ax = plt.axes(projection='3d')
-ax.set_title("Points in Space")
-ax.set_xlim([0, grid1.dimensiones[0]])
-ax.set_ylim([0, grid1.dimensiones[1]])
-ax.set_zlim([0, grid1.dimensiones[2]])
+####    ESCUCHA DEL MICROFONO        ####
 
-ax.scatter(sound_source_positions[:,0], sound_source_positions[:,1],  sound_source_positions[:,2])
-ax.scatter(mic_position[0], mic_position[1], mic_position[2])
-ax.scatter(posicion_estimada[:,0], posicion_estimada[:,1], posicion_estimada[:,2])
+RESPEAKER_RATE = 44100
+RESPEAKER_CHANNELS = 8
+RESPEAKER_WIDTH = 2
+# run getDeviceInfo.py to get index
+RESPEAKER_INDEX = 2  # refer to input device id
+CHUNK = 44100
+RECORD_SECONDS = 3
+WAVE_OUTPUT_FILENAME = "output.wav"
+ 
+p = pyaudio.PyAudio()
+ 
+stream = p.open(
+            format=p.get_format_from_width(RESPEAKER_WIDTH),
+            channels=RESPEAKER_CHANNELS,
+            rate=RESPEAKER_RATE,
+            input=True,
+            input_device_index=RESPEAKER_INDEX,)
 
-label_original = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-label_estimation = ['1\' ', '2\' ', '3\' ', '4\' ', '5\' ', '6\' ', '7\' ', '8\' ', '9\' ', '10\' ']
+## TODO O: DELETE EVERYTHING IN BETWEEN TODOs
+fig, (ax, ax2) = plt.subplots(2, figsize=(15, 7))
+x = np.arange(0, 2 * CHUNK, 2)
+x_fft = np.linspace(0, RESPEAKER_RATE, CHUNK)
+# create a line object with random data
+line, = ax.plot(x, np.random.rand(CHUNK), '-', lw=2)
+line_fft, = ax2.semilogx(x_fft, np.random.rand(CHUNK), '-', lw=2)
 
-print("Posicion estimada: ")
-print(posicion_estimada)
+# basic formatting for the axes
+ax.set_title('AUDIO WAVEFORM')
+ax.set_xlabel('samples')
+ax.set_ylabel('volume')
+ax.set_ylim(0, 255)
+ax.set_xlim(0, 2 * CHUNK)
+plt.setp(ax, xticks=[0, CHUNK, 2 * CHUNK], yticks=[0, 128, 255])
 
-print("Posicion Fuente: ")
-print(sound_source_positions)
+ax2.set_xlim(0, RESPEAKER_RATE/2)
 
-for i, txt in enumerate(label_original):
-    ax.text(sound_source_positions[i][0],sound_source_positions[i][1],sound_source_positions[i][2],  '%s' % (txt))
-    ax.text(posicion_estimada[i][0],posicion_estimada[i][1],posicion_estimada[i][2],  '%s' % label_estimation[i])
+plt.show(block=False)
+## TODO C: DELETE EVERYTHING IN BETWEEN TODOs
 
-plt.show()
+try: 
+    while(True):
+        data = stream.read(CHUNK)
+        # extract channel 0 data from 8 channels, if you want to extract channel 1, please change to [1::8]
+        data_np = np.fromstring(data,dtype=np.int16)[0::8]
+
+        line.set_ydata(data_np)
+        y_fft = np.fft.fft(data_np)
+        line_fft.set_ydata(np.abs(y_fft[0:CHUNK]) * 2 / (256 * CHUNK))
+
+        fig.canvas.draw()
+        fig.canvas.flush_events()
+
+except KeyboardInterrupt:
+    print("* done recording")
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+
+####    GRAFICOS DE POSICIÓN        ####
+# fig = plt.figure()
+# ax = plt.axes(projection='3d')
+# ax.set_title("Points in Space")
+# ax.set_xlim([0, grid1.dimensiones[0]])
+# ax.set_ylim([0, grid1.dimensiones[1]])
+# ax.set_zlim([0, grid1.dimensiones[2]])
+
+# ax.scatter(mic_position[0], mic_position[1], mic_position[2])
+# ax.scatter(posicion_estimada[:,0], posicion_estimada[:,1], posicion_estimada[:,2])
+
+# label_original = '1'
+
+# for i, txt in enumerate(label_original):
+#     ax.text(posicion_estimada[0],posicion_estimada[1],posicion_estimada[2],  '%s' % label_original)
+
+# plt.show()
