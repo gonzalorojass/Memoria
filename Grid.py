@@ -1,8 +1,6 @@
-from matplotlib.pyplot import margins
 import numpy as np
-import wave
 from copy import deepcopy
-from treelib import Tree, Node
+from treelib import Tree
 from Mic_array import *
 from GCC import *
 
@@ -15,46 +13,6 @@ class Grid:
     ):
         self.dimensiones = np.array([x_room, y_room, z_room])
         self.margin_dimensions = np.array([x_room, y_room, z_room])
-
-    def place_sound_source(
-        self,
-        filename,
-        position,
-    ):
-        if position[0] > self.dimensiones[0] + 1 or position[1] > self.dimensiones[1] + 1 or position[2] > self.dimensiones[2] + 1:
-            print("Posición esta fuera del espacio")
-            return
-        
-        try:
-            wf = wave.open(filename, 'r')
-            
-        except:
-            print("Insertar el nombre de un archivo valido")
-            return
-
-        c = 34300
-        fs = wf.getframerate()
-        recieved_signal = np.zeros((self.Mic_Array.mics_n, fs))
-
-        signal = wf.readframes(-1)
-        signal = np.frombuffer(signal, dtype=np.int16)   
-        left = signal[0::2]
-
-        for i in range(0, self.Mic_Array.mics_n):
-            tau = round(fs*(np.linalg.norm(position-self.Mic_Array.mic_position[i]))/c)
-            recieved_signal[i] = left[tau: tau+fs]
-
-        invXi_Xj = np.zeros((sum(range(self.Mic_Array.mics_n)), recieved_signal[0].size))
-        n = 0
-        for i in range(0, self.Mic_Array.mics_n-1):
-            for j in range (i+1, self.Mic_Array.mics_n):
-                Xi_Xj = np.fft.rfft(recieved_signal[i], n = recieved_signal[i].size)*np.conj(np.fft.rfft(recieved_signal[j], n = recieved_signal[j].size))
-                peso = 1/(abs(Xi_Xj))
-                invXi_Xj[n] = np.fft.irfft(Xi_Xj*peso, n = recieved_signal[0].size)
-                n += 1
-
-        return invXi_Xj, fs
-
 
     def HSRP(
         self,
