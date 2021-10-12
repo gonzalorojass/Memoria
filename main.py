@@ -2,8 +2,8 @@ from Grid import *
 from Mic_array import *
 from GCC import *
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import pyaudio
-import wave
 import numpy as np
 
 ####    INICIALIZACIÓN DE GRILLA     ####
@@ -34,7 +34,7 @@ stream = p.open(
             input=True,
             input_device_index=RESPEAKER_INDEX,)
 
-data_np = np.zeros(6, CHUNK)
+data_np = np.zeros((6, CHUNK))
 
 fig = plt.figure()
 ax = plt.axes(projection='3d')
@@ -45,10 +45,10 @@ ax.set_zlim([0, grid1.dimensiones[2]])
 
 x = np.arange(0, 2 * CHUNK, 2)
 
-sc, = ax.scatter(0,0,0)
+sc = ax.scatter(0,0,0)
 ax.scatter(mic_position[0], mic_position[1], mic_position[2])
 
-fig.show(block=False)
+fig.show()
 
 try: 
     while(True):
@@ -56,7 +56,17 @@ try:
         # extract channel 0 data from 8 channels, if you want to extract channel 1, please change to [1::8]
         for i in range(6):
             data_np[i] = np.frombuffer(data,dtype=np.int16)[i::8]
-        None, posicion_estimada = grid1.HSRP(data_np,"room", RESPEAKER_RATE)
+
+        invXi_Xj = np.zeros((sum(range(grid1.Mic_Array.mics_n)), data_np[0].size))
+        n = 0
+        for i in range(0, grid1.Mic_Array.mics_n-1):
+            for j in range (i+1, grid1.Mic_Array.mics_n):
+                Xi_Xj = np.fft.rfft(data_np[i], n = data_np[i].size)*np.conj(np.fft.rfft(data_np[j], n = data_np[j].size))
+                peso = 1/(abs(Xi_Xj))
+                invXi_Xj[n] = np.fft.irfft(Xi_Xj*peso, n = data_np[0].size)
+                n += 1
+
+        test, posicion_estimada = grid1.HSRP(data_np,"room", RESPEAKER_RATE)
         print(posicion_estimada)
 
         sc._offsets3d = (posicion_estimada[0], posicion_estimada[1], posicion_estimada[2])

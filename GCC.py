@@ -31,7 +31,7 @@ def GCC(
                     if tau > tau_max:
                         tau_max = tau
 
-                for k in range(tau_min, tau_max+1):
+                for k in range(int(tau_min), int(tau_max)+1):
                     potencia += np.real(correlated[n][k])
 
                 n = n + 1
