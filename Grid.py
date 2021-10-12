@@ -62,8 +62,6 @@ class Grid:
                 id_potencia_mayor = hoja.identifier
   
         if np.prod(self.temporal_partitions.get_node(id_potencia_mayor).data["to_divide"]) <= 1000:
-            self.temporal_partitions.show()
-            print(id_potencia_mayor)
             centro = self.temporal_partitions.get_node(id_potencia_mayor).data["esquinas"][0] + to_divide
             return id_potencia_mayor, centro
 

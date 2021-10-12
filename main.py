@@ -6,6 +6,9 @@ from mpl_toolkits.mplot3d import Axes3D
 import pyaudio
 import numpy as np
 
+import timeit                            # PARA CALCULAR TIEMPO; BORRAR AL FINAL 
+
+
 ####    INICIALIZACIÓN DE GRILLA     ####
 
 grid1 = Grid(x_room = 283, y_room = 310, z_room = 233)
@@ -52,7 +55,8 @@ fig.show()
 
 try: 
     while(True):
-        data = stream.read(CHUNK)
+        data = stream.read(CHUNK, exception_on_overflow = False)
+        start = timeit.default_timer()
         # extract channel 0 data from 8 channels, if you want to extract channel 1, please change to [1::8]
         for i in range(6):
             data_np[i] = np.frombuffer(data,dtype=np.int16)[i::8]
@@ -66,9 +70,13 @@ try:
                 invXi_Xj[n] = np.fft.irfft(Xi_Xj*peso, n = data_np[0].size)
                 n += 1
 
-        test, posicion_estimada = grid1.HSRP(data_np,"room", RESPEAKER_RATE)
-        print(posicion_estimada)
+        test, posicion_estimada = grid1.HSRP(invXi_Xj,"room", RESPEAKER_RATE)
+        stop = timeit.default_timer()
 
+        print('Time: ', stop - start) 
+        print(posicion_estimada)
+        grid1.reset_tree()
+        
         sc._offsets3d = (posicion_estimada[0], posicion_estimada[1], posicion_estimada[2])
         plt.draw()
 
