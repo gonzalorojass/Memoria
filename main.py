@@ -39,8 +39,10 @@ stream = p.open(
 
 data_np = np.zeros((6, CHUNK))
 
+plt.ion()
+
 fig = plt.figure()
-ax = plt.axes(projection='3d')
+ax = fig.add_subplot(111, projection='3d')
 ax.set_title("Points in Space")
 ax.set_xlim([0, grid1.dimensiones[0]])
 ax.set_ylim([0, grid1.dimensiones[1]])
@@ -77,6 +79,7 @@ try:
         print(posicion_estimada)
         grid1.reset_tree()
         
+        plt.pause(1)
         sc._offsets3d = (posicion_estimada[0], posicion_estimada[1], posicion_estimada[2])
         plt.draw()
 
