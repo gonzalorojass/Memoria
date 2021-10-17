@@ -1,22 +1,23 @@
 import numpy as np
-from Mic_array import *
 
-c = 34300
+SOUND_SPEED = 34300
+NUMBER_OF_MICROPHONES = 6
+
 
 def GCC(
     correlated,
     corners_to_check,
-    mic_array: MicArray,
+    mic_position,
     fs = 44100,
 ):
     potencia = 0
     if isinstance(correlated, np.ndarray):
         n=0
-        for i in range(0, mic_array.mics_n-1):
-            for j in range (i+1, mic_array.mics_n):
+        for i in range(0, NUMBER_OF_MICROPHONES-1):
+            for j in range (i+1, NUMBER_OF_MICROPHONES):
                 for corner in corners_to_check:
-                    tau = -round(fs*(np.linalg.norm(corner-mic_array.mic_position[i]) -
-                    np.linalg.norm(corner-mic_array.mic_position[j]))/c)
+                    tau = -round(fs*(np.linalg.norm(corner-mic_position[i]) -
+                    np.linalg.norm(corner-mic_position[j]))/SOUND_SPEED)
 
                     if((corner == corners_to_check[0]).all()):
                         tau_min = tau_max = tau

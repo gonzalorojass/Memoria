@@ -1,7 +1,6 @@
 import numpy as np
 from copy import deepcopy
 from treelib import Tree
-from Mic_array import *
 from GCC import *
 
 class Grid:
@@ -33,7 +32,7 @@ class Grid:
             data={
                 "to_divide": to_divide,
                 "esquinas": esquinas_nodo,
-                "potencia": GCC(inverted_signal, esquinas_nodo, self.Mic_Array, fs),
+                "potencia": GCC(inverted_signal, esquinas_nodo, self.mic_position, fs),
             })
 
             for i in range(1,8):
@@ -42,7 +41,7 @@ class Grid:
                 data={
                     "to_divide": to_divide,
                     "esquinas": esquinas_nodo,
-                    "potencia": GCC(inverted_signal, esquinas_nodo, self.Mic_Array, fs),
+                    "potencia": GCC(inverted_signal, esquinas_nodo, self.mic_position, fs),
                 })
 
         else:
@@ -53,7 +52,7 @@ class Grid:
                 data={
                     "to_divide": to_divide,
                     "esquinas": esquinas_nodo,
-                    "potencia": GCC(inverted_signal, esquinas_nodo, self.Mic_Array, fs),
+                    "potencia": GCC(inverted_signal, esquinas_nodo, self.mic_position, fs),
                 })        
 
         for hoja in self.temporal_partitions.leaves():
@@ -72,9 +71,10 @@ class Grid:
 
     def place_mic_array(
     self, 
-    position, 
+    position,
+    mic_position
     ):
-        self.Mic_Array = MicArray(position)
+        self.mic_position = mic_position
         mic_margin = position + np.array([0,50,0])
         self.margin_dimensions[1] = self.dimensiones[1] - mic_margin[1]
 
