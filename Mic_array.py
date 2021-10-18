@@ -16,7 +16,7 @@ class MicArray:
         rate = 34000,
         chunk_size = None
     ):
-        channels = 6
+        channels = 8
         self.pyaudio_instance = pyaudio.PyAudio()
         self.queue = queue.Queue()
         self.quit_event = threading.Event()

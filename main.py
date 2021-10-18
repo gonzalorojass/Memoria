@@ -10,7 +10,7 @@ import timeit                            # PARA CALCULAR TIEMPO
 NUMBER_OF_MICROPHONES = 6
 ####    INICIALIZACIÓN DE GRILLA     ####
 
-grid1 = Grid(x_room = 283, y_room = 310, z_room = 233)
+grid1 = Grid.Grid(x_room = 283, y_room = 310, z_room = 233)
 mic_position = np.array([121,10,75])
 posicion_estimada = np.zeros(3)
 
@@ -33,7 +33,7 @@ ax.scatter(mic_position[0], mic_position[1], mic_position[2])
 
 fig.show()
 
-with MicArray(center=mic_position, rate = RESPEAKER_RATE, chunk_size = CHUNK) as mic:
+with MicArray(grid=grid1, center=mic_position, rate = RESPEAKER_RATE, chunk_size = CHUNK) as mic:
     for chunk in mic.read_chunks():
 
         start = timeit.default_timer()      # Calculo tiempo
@@ -50,11 +50,11 @@ with MicArray(center=mic_position, rate = RESPEAKER_RATE, chunk_size = CHUNK) as
         ignore, posicion_estimada = grid1.HSRP(invXi_Xj,"room", RESPEAKER_RATE)
         stop = timeit.default_timer()
 
-    print('Time: ', stop - start) 
-    print(posicion_estimada)
-    grid1.reset_tree()
+        print('Time: ', stop - start) 
+        print(posicion_estimada)
+        grid1.reset_tree()
     
-    sc._offsets3d = (posicion_estimada[0], posicion_estimada[1], posicion_estimada[2])
-    plt.pause(0.1)
-    plt.draw()
+        sc._offsets3d = (np.array([posicion_estimada[0]]), np.array([posicion_estimada[1]]), np.array([posicion_estimada[2]]))
+        plt.pause(0.1)
+        plt.draw()
 
