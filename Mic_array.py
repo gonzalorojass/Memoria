@@ -1,5 +1,4 @@
 import pyaudio
-import queue
 import threading
 import numpy as np
 import math
@@ -18,8 +17,8 @@ class MicArray:
     ):
         channels = 8
         self.pyaudio_instance = pyaudio.PyAudio()
-        self.queue = queue.Queue()
         self.quit_event = threading.Event()
+        self.data = None
         self.sample_rate = rate
         self.chunk_size = chunk_size if chunk_size else rate / 100
 
@@ -60,28 +59,23 @@ class MicArray:
 
 
     def _callback(self, in_data, frame_count, time_info, status):
-        self.queue.put(in_data)
+        self.data = in_data
         return None, pyaudio.paContinue
 
     def start(self):
-        self.queue.queue.clear()
         self.stream.start_stream()
 
 
     def read_chunks(self):
         self.quit_event.clear()
         while not self.quit_event.is_set():
-            frames = self.queue.get()
-            if not frames:
-                break
-
-            frames = np.fromstring(frames, dtype='int16')
-            yield frames
+            if self.data:
+                frames = np.fromstring(self.data, dtype='int16')
+                yield frames
 
     def stop(self):
         self.quit_event.set()
         self.stream.stop_stream()
-        self.queue.put('')
 
     def __enter__(self):
         self.start()
