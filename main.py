@@ -16,8 +16,20 @@ posicion_estimada = np.zeros(3)
 
 RESPEAKER_RATE = 44100
 CHUNK = 44100
+RESPEAKER_CHANNELS = 8
+RESPEAKER_WIDTH = 2
+RESPEAKER_INDEX = 2
 
-fig, ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8 = plt.subplots(8, figsize=(15, 7))
+p = pyaudio.PyAudio()
+ 
+stream = p.open(
+            format=p.get_format_from_width(RESPEAKER_WIDTH),
+            channels=RESPEAKER_CHANNELS,
+            rate=RESPEAKER_RATE,
+            input=True,
+            input_device_index=RESPEAKER_INDEX,)
+
+fig, (ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8) = plt.subplots(8, figsize=(15, 7))
 
 # variable for plotting
 x = np.arange(0, 2 * CHUNK, 2)
@@ -32,15 +44,41 @@ line6, = ax6.plot(x, np.random.rand(CHUNK), '-', lw=2)
 line7, = ax7.plot(x, np.random.rand(CHUNK), '-', lw=2)
 line8, = ax8.plot(x, np.random.rand(CHUNK), '-', lw=2)
 
-with MicArray(grid=grid1, center=mic_position, rate = RESPEAKER_RATE, chunk_size = CHUNK) as mic:
-    for chunk in mic.read_chunks():
-        line1.set_ydata(chunk[0::8])
-        line2.set_ydata(chunk[1::8])
-        line3.set_ydata(chunk[2::8])
-        line4.set_ydata(chunk[3::8])
-        line5.set_ydata(chunk[4::8])
-        line6.set_ydata(chunk[5::8])
-        line7.set_ydata(chunk[6::8])
-        line8.set_ydata(chunk[7::8])
+data_np = np.zeros(6, CHUNK)
+
+try:
+    while(True):
+        data = stream.read(CHUNK)
+        for i in range(6):
+                data_np[i] = np.frombuffer(data,dtype=np.int16)[i::8]
+
+        line1.set_ydata(data_np[0::8])
+        line2.set_ydata(data_np[1::8])
+        line3.set_ydata(data_np[2::8])
+        line4.set_ydata(data_np[3::8])
+        line5.set_ydata(data_np[4::8])
+        line6.set_ydata(data_np[5::8])
+        line7.set_ydata(data_np[6::8])
+        line8.set_ydata(data_np[7::8])
+
         input("Press Enter to continue...")
+
+except KeyboardInterrupt:
+    print("* done recording")
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+
+
+# with MicArray(grid=grid1, center=mic_position, rate = RESPEAKER_RATE, chunk_size = CHUNK) as mic:
+#     for chunk in mic.read_chunks():
+#         line1.set_ydata(chunk[0::8])
+#         line2.set_ydata(chunk[1::8])
+#         line3.set_ydata(chunk[2::8])
+#         line4.set_ydata(chunk[3::8])
+#         line5.set_ydata(chunk[4::8])
+#         line6.set_ydata(chunk[5::8])
+#         line7.set_ydata(chunk[6::8])
+#         line8.set_ydata(chunk[7::8])
+#         input("Press Enter to continue...")
 
