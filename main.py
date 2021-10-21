@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 
-import timeit                            # PARA CALCULAR TIEMPO
-
 NUMBER_OF_MICROPHONES = 6
 ####    INICIALIZACIÓN DE GRILLA     ####
 
@@ -19,42 +17,30 @@ posicion_estimada = np.zeros(3)
 RESPEAKER_RATE = 44100
 CHUNK = 44100
 
-plt.ion()
+fig, ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8 = plt.subplots(8, figsize=(15, 7))
 
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-ax.set_title("Points in Space")
-ax.set_xlim([0, grid1.dimensiones[0]])
-ax.set_ylim([0, grid1.dimensiones[1]])
-ax.set_zlim([0, grid1.dimensiones[2]])
+# variable for plotting
+x = np.arange(0, 2 * CHUNK, 2)
 
-sc = ax.scatter(0,0,0)
-ax.scatter(mic_position[0], mic_position[1], mic_position[2])
-
-fig.show()
+# create a line object with random data
+line1, = ax1.plot(x, np.random.rand(CHUNK), '-', lw=2)
+line2, = ax2.plot(x, np.random.rand(CHUNK), '-', lw=2)
+line3, = ax3.plot(x, np.random.rand(CHUNK), '-', lw=2)
+line4, = ax4.plot(x, np.random.rand(CHUNK), '-', lw=2)
+line5, = ax5.plot(x, np.random.rand(CHUNK), '-', lw=2)
+line6, = ax6.plot(x, np.random.rand(CHUNK), '-', lw=2)
+line7, = ax7.plot(x, np.random.rand(CHUNK), '-', lw=2)
+line8, = ax8.plot(x, np.random.rand(CHUNK), '-', lw=2)
 
 with MicArray(grid=grid1, center=mic_position, rate = RESPEAKER_RATE, chunk_size = CHUNK) as mic:
     for chunk in mic.read_chunks():
-
-        start = timeit.default_timer()      # Calculo tiempo
-
-        invXi_Xj = np.zeros((sum(range(NUMBER_OF_MICROPHONES)), chunk[0::8].size))
-        n = 0
-        for i in range(0, NUMBER_OF_MICROPHONES-1):
-            for j in range (i+1, NUMBER_OF_MICROPHONES):
-                Xi_Xj = np.fft.rfft(chunk[i::8], n = chunk[i::8].size)*np.conj(np.fft.rfft(chunk[j::8], n = chunk[j::8].size))
-                peso = 1/(abs(Xi_Xj))
-                invXi_Xj[n] = np.fft.irfft(Xi_Xj*peso, n = chunk[0::8].size)
-                n += 1
-
-        ignore, posicion_estimada = grid1.HSRP(invXi_Xj,"room", RESPEAKER_RATE)
-        stop = timeit.default_timer()
-
-        print('Time: ', stop - start) 
-        print(posicion_estimada)
-        grid1.reset_tree()
-    
-        sc._offsets3d = (np.array([posicion_estimada[0]]), np.array([posicion_estimada[1]]), np.array([posicion_estimada[2]]))
-        plt.pause(0.1)
-        plt.draw()
+        line1.set_ydata(chunk[0::8])
+        line2.set_ydata(chunk[1::8])
+        line3.set_ydata(chunk[2::8])
+        line4.set_ydata(chunk[3::8])
+        line5.set_ydata(chunk[4::8])
+        line6.set_ydata(chunk[5::8])
+        line7.set_ydata(chunk[6::8])
+        line8.set_ydata(chunk[7::8])
+        input("Press Enter to continue...")
 
