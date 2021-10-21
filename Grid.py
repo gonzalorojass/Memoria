@@ -75,7 +75,7 @@ class Grid:
     mic_position
     ):
         self.mic_position = mic_position
-        mic_margin = position + np.array([0,50,0])
+        mic_margin = position + np.array([0,100,0])
         self.margin_dimensions[1] = self.dimensiones[1] - mic_margin[1]
 
         self.room_partitions = Tree()

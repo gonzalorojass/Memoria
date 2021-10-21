@@ -10,14 +10,14 @@ import timeit                            # PARA CALCULAR TIEMPO
 NUMBER_OF_MICROPHONES = 6
 ####    INICIALIZACIÓN DE GRILLA     ####
 
-grid1 = Grid.Grid(x_room = 283, y_room = 310, z_room = 233)
+grid1 = Grid.Grid(x_room = 314, y_room = 422, z_room = 235)
 mic_position = np.array([121,10,75])
 posicion_estimada = np.zeros(3)
 
 ####    ESCUCHA DEL MICROFONO        ####
 
 RESPEAKER_RATE = 44100
-CHUNK = 44100
+CHUNK = 1024*4
 
 plt.ion()
 
