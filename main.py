@@ -44,6 +44,16 @@ line6, = ax6.plot(x, np.random.rand(CHUNK), '-', lw=2)
 line7, = ax7.plot(x, np.random.rand(CHUNK), '-', lw=2)
 line8, = ax8.plot(x, np.random.rand(CHUNK), '-', lw=2)
 
+ax1.set_ylim(-1000,1000)
+ax2.set_ylim(-1000,1000)
+ax3.set_ylim(-1000,1000)
+ax4.set_ylim(-1000,1000)
+ax5.set_ylim(-1000,1000)
+ax6.set_ylim(-1000,1000)
+ax7.set_ylim(-1000,1000)
+ax8.set_ylim(-1000,1000)
+plt.show(block=False)
+
 data_np = np.zeros(6, CHUNK)
 
 try:
@@ -60,6 +70,9 @@ try:
         line6.set_ydata(data_np[5::8])
         line7.set_ydata(data_np[6::8])
         line8.set_ydata(data_np[7::8])
+
+        fig.canvas.draw()
+        fig.canvas.flush_events()
 
         input("Press Enter to continue...")
 
