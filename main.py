@@ -56,42 +56,46 @@ plt.show(block=False)
 
 data_np = np.zeros(6, CHUNK)
 
-try:
-    while(True):
-        data = stream.read(CHUNK)
-        for i in range(6):
-                data_np[i] = np.frombuffer(data,dtype=np.int16)[i::8]
+# try:
+#     while(True):
+#         data = stream.read(CHUNK)
+#         for i in range(6):
+#                 data_np[i] = np.frombuffer(data,dtype=np.int16)[i::8]
 
-        line1.set_ydata(data_np[0::8])
-        line2.set_ydata(data_np[1::8])
-        line3.set_ydata(data_np[2::8])
-        line4.set_ydata(data_np[3::8])
-        line5.set_ydata(data_np[4::8])
-        line6.set_ydata(data_np[5::8])
-        line7.set_ydata(data_np[6::8])
-        line8.set_ydata(data_np[7::8])
+#         line1.set_ydata(data_np[0::8])
+#         line2.set_ydata(data_np[1::8])
+#         line3.set_ydata(data_np[2::8])
+#         line4.set_ydata(data_np[3::8])
+#         line5.set_ydata(data_np[4::8])
+#         line6.set_ydata(data_np[5::8])
+#         line7.set_ydata(data_np[6::8])
+#         line8.set_ydata(data_np[7::8])
+
+#         fig.canvas.draw()
+#         fig.canvas.flush_events()
+
+#         input("Press Enter to continue...")
+
+# except KeyboardInterrupt:
+#     print("* done recording")
+#     stream.stop_stream()
+#     stream.close()
+#     p.terminate()
+
+
+with MicArray(grid=grid1, center=mic_position, rate = RESPEAKER_RATE, chunk_size = CHUNK) as mic:
+    for chunk in mic.read_chunks():
+        line1.set_ydata(chunk[0::8])
+        line2.set_ydata(chunk[1::8])
+        line3.set_ydata(chunk[2::8])
+        line4.set_ydata(chunk[3::8])
+        line5.set_ydata(chunk[4::8])
+        line6.set_ydata(chunk[5::8])
+        line7.set_ydata(chunk[6::8])
+        line8.set_ydata(chunk[7::8])
 
         fig.canvas.draw()
         fig.canvas.flush_events()
 
         input("Press Enter to continue...")
-
-except KeyboardInterrupt:
-    print("* done recording")
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
-
-
-# with MicArray(grid=grid1, center=mic_position, rate = RESPEAKER_RATE, chunk_size = CHUNK) as mic:
-#     for chunk in mic.read_chunks():
-#         line1.set_ydata(chunk[0::8])
-#         line2.set_ydata(chunk[1::8])
-#         line3.set_ydata(chunk[2::8])
-#         line4.set_ydata(chunk[3::8])
-#         line5.set_ydata(chunk[4::8])
-#         line6.set_ydata(chunk[5::8])
-#         line7.set_ydata(chunk[6::8])
-#         line8.set_ydata(chunk[7::8])
-#         input("Press Enter to continue...")
 
