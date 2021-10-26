@@ -48,32 +48,6 @@ ax7.set_ylim(-1000,1000)
 ax8.set_ylim(-1000,1000)
 plt.show(block=False)
 
-# try:
-#     while(True):
-#         data = stream.read(CHUNK, exception_on_overflow = False)
-#         
-#         data = np.fromstring(data, dtype='int16')
-# 
-#         line1.set_ydata(data[0::8])
-#         line2.set_ydata(data[1::8])
-#         line3.set_ydata(data[2::8])
-#         line4.set_ydata(data[3::8])
-#         line5.set_ydata(data[4::8])
-#         line6.set_ydata(data[5::8])
-#         line7.set_ydata(data[6::8])
-#         line8.set_ydata(data[7::8])
-# 
-#         fig.canvas.draw()
-#         fig.canvas.flush_events()
-# 
-#         input("Press Enter to continue...")
-# 
-# except KeyboardInterrupt:
-#     print("* done recording")
-#     stream.stop_stream()
-#     stream.close()
-#     p.terminate()
-
 
 with MicArray(grid=grid1, center=mic_position, rate = RESPEAKER_RATE, chunk_size = CHUNK) as mic:
     for chunk in mic.read_chunks():
@@ -89,6 +63,7 @@ with MicArray(grid=grid1, center=mic_position, rate = RESPEAKER_RATE, chunk_size
         line6.set_ydata(chunk[5::8])
         line7.set_ydata(chunk[6::8])
         line8.set_ydata(chunk[7::8])
+
         
         fig.canvas.draw()
         fig.canvas.flush_events()
