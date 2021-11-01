@@ -11,11 +11,8 @@ import time
 
 camara = Camara()
 
-camara.reset_camera()
 camara.mycam.ptz_move_left()
-sleep(10)                ## sleep(8) == 90 grados en velocidad 4
-camara.mycam.ptz_move_right()
-sleep(16)      
+sleep(20)                ## sleep(8) == 90 grados en velocidad 4   
 camara.mycam.ptz_stop_run()
 # NUMBER_OF_MICROPHONES = 6
 # ####    INICIALIZACIÓN DE GRILLA     ####

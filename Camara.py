@@ -11,11 +11,11 @@ class Camara:
         self.mycam = FoscamCamera('192.168.0.16', 88, 'admin1', 'admin1')
         self.mycam.get_ptz_speed()
         self.current_position = np.array([0,0,math.pi])
-        self.reset_camera(self)
+        self.reset_camera()
 
     def reset_camera(self):
         self.mycam.ptz_reset()
-        sleep(15)
+        sleep(20)
         self.mycam.ptz_move_down()
         sleep(1)
         self.mycam.ptz_stop_run()
