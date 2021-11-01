@@ -13,7 +13,7 @@ class MicArray:
         grid: Grid,
         center = np.array([0,0,0]),
         distance_to_center = 5,
-        rate = 34000,
+        rate = 44100,
         chunk_size = None
     ):
         channels = 8
