@@ -18,31 +18,51 @@ posicion_estimada = np.zeros(3)
 
 RESPEAKER_RATE = 44100
 CHUNK = 44100
+RESPEAKER_CHANNELS = 8
 
-plt.ion()
+# plt.ion()
 
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-ax.set_title("Points in Space")
-ax.set_xlim([0, grid1.dimensiones[0]])
-ax.set_ylim([0, grid1.dimensiones[1]])
-ax.set_zlim([0, grid1.dimensiones[2]])
+# fig = plt.figure()
+# ax = fig.add_subplot(111, projection='3d')
+# ax.set_title("Points in Space")
+# ax.set_xlim([0, grid1.dimensiones[0]])
+# ax.set_ylim([0, grid1.dimensiones[1]])
+# ax.set_zlim([0, grid1.dimensiones[2]])
 
-sc = ax.scatter(0,0,0)
-ax.scatter(mic_position[0], mic_position[1], mic_position[2])
+# sc = ax.scatter(0,0,0)
+# ax.scatter(mic_position[0], mic_position[1], mic_position[2])
 
-fig.show()
+# fig.show()
+to_check = np.zeros((8))
+not_mic = np.array([0,1])
+mic_data = np.zeros((6, CHUNK))
 
 with MicArray(grid=grid1, center=mic_position, rate = RESPEAKER_RATE, chunk_size = CHUNK) as mic:
     for chunk in mic.read_chunks():
 
         start = timeit.default_timer()      # Calculo tiempo
 
+        for i in range(RESPEAKER_CHANNELS):
+            to_check[i] = np.max(chunk[i::8])
+            print("canal "+str(i) +": " + str(np.max(chunk[i::8])))
+
+        if((not_mic != np.argpartition(to_check, 2)[0:2]).all()):
+            print("\n \n REVISANDO LOS VALORES: \n \n")
+            not_mic = np.argpartition(to_check, 2)[0:2]
+            print("channels to ignore:")
+            print(not_mic)
+            channel_0 = np.max(not_mic)+1
+            print("Mic channel 0:" + str(channel_0))
+
+        for i in range(0, 6):
+            mic_data[i] = chunk[(i+channel_0 if (channel_0 <= 7) else channel_0-8+i)::8]
+
         invXi_Xj = np.zeros((sum(range(NUMBER_OF_MICROPHONES)), chunk[0::8].size))
         n = 0
         for i in range(0, NUMBER_OF_MICROPHONES-1):
             for j in range (i+1, NUMBER_OF_MICROPHONES):
-                Xi_Xj = np.fft.rfft(chunk[i::8], n = chunk[i::8].size)*np.conj(np.fft.rfft(chunk[j::8], n = chunk[j::8].size))
+                
+                Xi_Xj = np.fft.rfft(mic_data[i], n = mic_data[i].size)*np.conj(np.fft.rfft(mic_data[j], n = mic_data[j].size))
                 peso = 1/(abs(Xi_Xj))
                 invXi_Xj[n] = np.fft.irfft(Xi_Xj*peso, n = chunk[0::8].size)
                 n += 1
@@ -54,7 +74,7 @@ with MicArray(grid=grid1, center=mic_position, rate = RESPEAKER_RATE, chunk_size
         print(posicion_estimada)
         grid1.reset_tree()
     
-        sc._offsets3d = (np.array([posicion_estimada[0]]), np.array([posicion_estimada[1]]), np.array([posicion_estimada[2]]))
-        plt.pause(0.1)
-        plt.draw()
-
+        input("Press Enter to continue")
+        # sc._offsets3d = (np.array([posicion_estimada[0]]), np.array([posicion_estimada[1]]), np.array([posicion_estimada[2]]))
+        # plt.pause(0.1)
+        # plt.draw()
