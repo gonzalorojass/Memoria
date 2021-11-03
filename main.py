@@ -47,10 +47,7 @@ with MicArray(grid=grid1, center=mic_position, rate = RESPEAKER_RATE, chunk_size
             print("canal "+str(i) +": " + str(np.max(chunk[i::8])))
 
         if((not_mic != np.argpartition(to_check, 2)[0:2]).all()):
-            print("\n \n REVISANDO LOS VALORES: \n \n")
             not_mic = np.argpartition(to_check, 2)[0:2]
-            print("channels to ignore:")
-            print(not_mic)
             channel_0 = np.max(not_mic)+1
             print("Mic channel 0:" + str(channel_0))
 
