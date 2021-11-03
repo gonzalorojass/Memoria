@@ -44,15 +44,13 @@ with MicArray(grid=grid1, center=mic_position, rate = RESPEAKER_RATE, chunk_size
 
         for i in range(RESPEAKER_CHANNELS):
             to_check[i] = np.max(chunk[i::8])
-            print("canal "+str(i) +": " + str(np.max(chunk[i::8])))
 
         if((not_mic != np.argpartition(to_check, 2)[0:2]).all()):
             not_mic = np.argpartition(to_check, 2)[0:2]
             channel_0 = np.max(not_mic)+1
-            print("Mic channel 0:" + str(channel_0))
 
         for i in range(0, 6):
-            mic_data[i] = chunk[(i+channel_0 if (channel_0 <= 7) else channel_0-8+i)::8]
+            mic_data[i] = chunk[(i+channel_0 if (i+channel_0 <= 7) else channel_0-8+i)::8]
 
         invXi_Xj = np.zeros((sum(range(NUMBER_OF_MICROPHONES)), chunk[0::8].size))
         n = 0

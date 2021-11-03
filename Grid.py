@@ -34,7 +34,6 @@ class Grid:
                 "esquinas": esquinas_nodo,
                 "potencia": GCC(inverted_signal, esquinas_nodo, self.mic_position, fs),
             })
-            print(esquinas_nodo)
 
             for i in range(1,8):
                 esquinas_nodo = self.corners(self.temporal_partitions.get_node("1").data["esquinas"][i], to_divide)
@@ -44,11 +43,8 @@ class Grid:
                     "esquinas": esquinas_nodo,
                     "potencia": GCC(inverted_signal, esquinas_nodo, self.mic_position, fs),
                 })
-                print(esquinas_nodo)
-            input("Wait for Enter")
         else:
             esquinas_nodo_padre = self.corners(self.temporal_partitions.get_node(parent_id).data["esquinas"][0], to_divide)
-            print(esquinas_nodo_padre)
             for i in range(0,8):
                 esquinas_nodo = self.corners(esquinas_nodo_padre[i], to_divide)
                 self.temporal_partitions.create_node(identifier=parent_id + str(i+1), parent=parent_id,
@@ -57,8 +53,6 @@ class Grid:
                     "esquinas": esquinas_nodo,
                     "potencia": GCC(inverted_signal, esquinas_nodo, self.mic_position, fs),
                 })
-                print(esquinas_nodo)      
-            input("wait for Enter")
 
         for hoja in self.temporal_partitions.leaves():
             if potencia_alta < hoja.data["potencia"]:
@@ -66,7 +60,7 @@ class Grid:
                 id_potencia_mayor = hoja.identifier
   
         if np.prod(self.temporal_partitions.get_node(id_potencia_mayor).data["to_divide"]) <= 1000:
-            centro = self.temporal_partitions.get_node(id_potencia_mayor).data["esquinas"][0] + to_divide
+            centro = self.temporal_partitions.get_node(id_potencia_mayor).data["esquinas"][0] + self.temporal_partitions.get_node(id_potencia_mayor).data["to_divide"]/2
             return id_potencia_mayor, centro
 
         else:
