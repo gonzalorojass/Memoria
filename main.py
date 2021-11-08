@@ -1,39 +1,84 @@
 from Grid import *
 from Mic_array import *
 from GCC import *
+from Camara import *
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
+import timeit                            # PARA CALCULAR TIEMPO
 
-grid1 = Grid(x_room = 200, y_room = 300, z_room = 200)
-mic_position = np.array([100,70,0])
-sound_source_positions = np.array([[20,250,180],[100,210,180],[185,180,180],[110,90,180],[170,85,100],
-[20,170,180],[190,100,100],[120,250,60],[85,160,60],[100,100,60]])
-posicion_estimada = np.zeros((10,3))
+NUMBER_OF_MICROPHONES = 6
+####    INICIALIZACIÓN DE GRILLA     ####
 
-grid1.place_mic_array(mic_position)
+grid1 = Grid.Grid(x_room = 305, y_room = 376, z_room = 235)
+camara = Camara(np.array([108,0,80]))
+mic_position = np.array([1058,10,80])
+posicion_estimada = np.zeros(3)
 
-for i in range(0, 10):
-    start = time.time()                     # PARA CALCULAR TIEMPO; BORRAR AL FINAL
-    signal, fs = grid1.place_sound_source('trumpet.wav', sound_source_positions[i])
-    posicion_estimada[i] = grid1.SRP(signal, grid1.Mic_Array, fs)
-    end = time.time()                                                   # PARA CALCULAR TIEMPO; BORRAR AL FINAL
-    print ("\ncoste computacional: "+str(end-start))                    # PARA CALCULAR TIEMPO; BORRAR AL FINAL
+###     INICIALIZACION GRAFICOS     ####
+
+plt.ion()
 
 fig = plt.figure()
-ax = plt.axes(projection='3d')
+ax = fig.add_subplot(111, projection='3d')
 ax.set_title("Points in Space")
-ax.set_xlim([0, grid1.x_room-1])
-ax.set_ylim([0, grid1.y_room-1])
-ax.set_zlim([0, grid1.z_room-1])
+ax.set_xlim([0, grid1.dimensiones[0]])
+ax.set_ylim([0, grid1.dimensiones[1]])
+ax.set_zlim([0, grid1.dimensiones[2]])
 
-ax.scatter(sound_source_positions[:,0], sound_source_positions[:,1],  sound_source_positions[:,2])
+sc = ax.scatter(0,0,0)
 ax.scatter(mic_position[0], mic_position[1], mic_position[2])
-ax.scatter(posicion_estimada[:,0], posicion_estimada[:,1], posicion_estimada[:,2])
 
-label_original = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-label_estimation = ['1\' ', '2\' ', '3\' ', '4\' ', '5\' ', '6\' ', '7\' ', '8\' ', '9\' ', '10\' ']
 
-for i, txt in enumerate(label_original):
-    ax.text(sound_source_positions[i],sound_source_positions[i],sound_source_positions[i],  '%s' % (txt))
-    ax.text(posicion_estimada[i],posicion_estimada[i],posicion_estimada[i],  '%s' % label_estimation[i])
+####    ESCUCHA DEL MICROFONO        ####
 
-plt.show()
+RESPEAKER_RATE = 44100
+CHUNK = 44100
+RESPEAKER_CHANNELS = 8
+
+to_check = np.zeros((8))
+not_mic = np.array([0,1])
+mic_data = np.zeros((6, CHUNK))
+
+input("Press Enter to start")
+
+with MicArray(grid=grid1, center=mic_position, rate = RESPEAKER_RATE, chunk_size = CHUNK) as mic:
+    for chunk in mic.read_chunks():
+
+        start = timeit.default_timer()      # Calculo tiempo
+
+        for i in range(RESPEAKER_CHANNELS):
+            to_check[i] = np.max(chunk[i::8])
+
+        if((not_mic != np.argpartition(to_check, 2)[0:2]).all()):
+            not_mic = np.argpartition(to_check, 2)[0:2]
+            channel_0 = np.max(not_mic)+1
+
+        for i in range(0, 6):
+            mic_data[i] = chunk[(i+channel_0 if (i+channel_0 <= 7) else channel_0-8+i)::8]
+
+        invXi_Xj = np.zeros((sum(range(NUMBER_OF_MICROPHONES)), chunk[0::8].size))
+        n = 0
+        for i in range(0, NUMBER_OF_MICROPHONES-1):
+            for j in range (i+1, NUMBER_OF_MICROPHONES):
+                
+                Xi_Xj = np.fft.rfft(mic_data[i], n = mic_data[i].size)*np.conj(np.fft.rfft(mic_data[j], n = mic_data[j].size))
+                peso = 1/(abs(Xi_Xj))
+                invXi_Xj[n] = np.fft.irfft(Xi_Xj*peso, n = chunk[0::8].size)
+                n += 1
+
+        ignore, posicion_estimada = grid1.HSRP(invXi_Xj,"room", RESPEAKER_RATE)
+        stop = timeit.default_timer()
+
+        print('Time: ', stop - start)
+        print(posicion_estimada)
+        camara.point_at_location(posicion_estimada)
+        grid1.reset_tree()
+
+        sc._offsets3d = (np.array([posicion_estimada[0]]), np.array([posicion_estimada[1]]), np.array([posicion_estimada[2]]))
+        plt.pause(0.1)
+        plt.draw()
+
+        fig.savefig('temp.png', dpi=fig.dpi)
+    
+        input("Press Enter to continue")

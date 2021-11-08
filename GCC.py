@@ -1,40 +1,44 @@
 import numpy as np
-from Mic_array import *
 
-c = 34300
+SOUND_SPEED = 34300
+NUMBER_OF_MICROPHONES = 6
+
 
 def GCC(
     correlated,
-    position_to_check,
-    mic_array: MicArray,
+    corners_to_check,
+    mic_position,
     fs = 44100,
 ):
     potencia = 0
     if isinstance(correlated, np.ndarray):
-        if (position_to_check[1] < mic_array.center[1]+mic_array.distance_to_center) or (position_to_check[2] < mic_array.center[2]):
-            potencia = 0
-    
-        else:
-            n=0
-            for i in range(0, mic_array.mics_n-1):
-                for j in range (i+1, mic_array.mics_n):
+        n=0
+        for i in range(0, NUMBER_OF_MICROPHONES-1):
+            for j in range (i+1, NUMBER_OF_MICROPHONES):
+                for corner in corners_to_check:
+                    tau = -round(fs*(np.linalg.norm(corner-mic_position[i]) -
+                    np.linalg.norm(corner-mic_position[j]))/SOUND_SPEED)
 
-                    tau = -round(fs*(np.linalg.norm(position_to_check-mic_array.mic_position[i]) -
-                    np.linalg.norm(position_to_check-mic_array.mic_position[j]))/c)
+                    if((corner == corners_to_check[0]).all()):
+                        tau_min = tau_max = tau
 
                     if tau < -(correlated[n].size):
                         tau = tau + correlated[n].size
-
                     if tau < 0:
                         tau = tau-1
 
-                    potencia += np.real(correlated[n][tau])
+                    if tau < tau_min:
+                        tau_min = tau
+                    if tau > tau_max:
+                        tau_max = tau
 
-                    n = n + 1
-                    if(n == 15):
-                        n=0
+                for k in range(int(tau_min), int(tau_max)+1):
+                    potencia += np.real(correlated[n][k])
+
+                n = n + 1
 
         return potencia
+
     else:
         print("Correlated debe ser del tipo numpy.ndarray")
         return None
