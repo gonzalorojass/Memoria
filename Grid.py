@@ -76,9 +76,10 @@ class Grid:
         self.mic_position = mic_position
         mic_margin = position + np.array([0,100,0])
         self.margin_dimensions[1] = self.dimensiones[1] - mic_margin[1]
+        self.margin_dimensions[2] = self.dimensiones[2] - mic_margin[2]
 
         self.room_partitions = Tree()
-        esquinas_raiz = self.corners(np.array([0,mic_margin[1],0]), self.margin_dimensions)
+        esquinas_raiz = self.corners(np.array([0,mic_margin[1],mic_margin[2]]), self.margin_dimensions)
         self.room_partitions.create_node(identifier="room", data={
                     "to_divide": self.margin_dimensions,
                     "esquinas": esquinas_raiz,

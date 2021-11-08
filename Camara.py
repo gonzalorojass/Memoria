@@ -8,7 +8,7 @@ VERTICAL_CAMERA_SPEED = 10.8/math.pi
 
 class Camara:
     def __init__(self, camera_position):
-        self.mycam = FoscamCamera('192.168.0.16', 88, 'admin1', 'admin1')
+        self.mycam = FoscamCamera('192.168.1.100', 88, 'admin1', 'admin1')
         self.current_direction = np.array([0,0,math.pi/2])
         self.camera_position = camera_position
         self.reset_camera()
