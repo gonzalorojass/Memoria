@@ -9,10 +9,9 @@ import timeit                            # PARA CALCULAR TIEMPO
 
 NUMBER_OF_MICROPHONES = 6
 ####    INICIALIZACIÓN DE GRILLA     ####
-
-grid1 = Grid.Grid(x_room = 305, y_room = 376, z_room = 235)
-camara = Camara(np.array([108,0,80]))
-mic_position = np.array([1058,10,80])
+grid1 = Grid.Grid(x_room =220 , y_room =495 , z_room = 212)
+camara = Camara(np.array([105,0,0]))
+mic_position = np.array([105,20,0])
 posicion_estimada = np.zeros(3)
 
 ###     INICIALIZACION GRAFICOS     ####
@@ -47,7 +46,7 @@ not_mic = np.array([0,1])
 mic_data = np.zeros((6, CHUNK))
 count = 0
 input("Press Enter to start")
-
+sleep(10)
 with MicArray(grid=grid1, center=mic_position, rate = RESPEAKER_RATE, chunk_size = CHUNK) as mic:
     for chunk in mic.read_chunks():
 
@@ -92,3 +91,4 @@ with MicArray(grid=grid1, center=mic_position, rate = RESPEAKER_RATE, chunk_size
         count = count+1
     
         input("Press Enter to continue")
+        sleep(10)
