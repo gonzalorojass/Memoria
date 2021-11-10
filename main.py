@@ -30,6 +30,12 @@ sc = ax.scatter(0,0,0)
 ax.scatter(mic_position[0], mic_position[1], mic_position[2])
 
 
+####     INICIALIZACION ARCHIVOS     ####
+
+f = open("positions.txt", "w")
+g = open("times.txt", "w")
+t = open("trees.txt", "w")
+
 ####    ESCUCHA DEL MICROFONO        ####
 
 RESPEAKER_RATE = 44100
@@ -39,7 +45,7 @@ RESPEAKER_CHANNELS = 8
 to_check = np.zeros((8))
 not_mic = np.array([0,1])
 mic_data = np.zeros((6, CHUNK))
-
+count = 0
 input("Press Enter to start")
 
 with MicArray(grid=grid1, center=mic_position, rate = RESPEAKER_RATE, chunk_size = CHUNK) as mic:
@@ -71,14 +77,18 @@ with MicArray(grid=grid1, center=mic_position, rate = RESPEAKER_RATE, chunk_size
         stop = timeit.default_timer()
 
         print('Time: ', stop - start)
+        g.write("Tiempo de procesamientio para posicion "+str(count)+": "+str(stop - start)+"\n")
         print(posicion_estimada)
+        f.write("posicion "+str(count)+": "+str(posicion_estimada)+"\n")
         camara.point_at_location(posicion_estimada)
-        grid1.reset_tree()
+
+        grid1.reset_tree(count)
 
         sc._offsets3d = (np.array([posicion_estimada[0]]), np.array([posicion_estimada[1]]), np.array([posicion_estimada[2]]))
         plt.pause(0.1)
         plt.draw()
 
-        fig.savefig('temp.png', dpi=fig.dpi)
+        fig.savefig(str(count)+'.png', dpi=fig.dpi)
+        count = count+1
     
         input("Press Enter to continue")

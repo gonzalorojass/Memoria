@@ -99,5 +99,6 @@ class Grid:
         
         return esquinas
 
-    def reset_tree(self):
+    def reset_tree(self, count):
+        self.temporal_partitions.save2file("tree"+str(count)+".txt")
         self.temporal_partitions = deepcopy(self.room_partitions)
