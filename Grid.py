@@ -103,9 +103,10 @@ class Grid:
                 potencia_alta = hoja.data["potencia"]
                 id_potencia_mayor = hoja.identifier
   
-        if np.prod(self.temporal_partitions.get_node(id_potencia_mayor).data["to_divide"]) <= 1000:
-            self.temporal_partitions.show()
+        if np.prod(self.temporal_partitions.get_node(id_potencia_mayor).data["to_divide"]) <= 100:
+            #self.temporal_partitions.show()
             print(id_potencia_mayor)
+            print(self.temporal_partitions.get_node(id_potencia_mayor).data)
             centro = self.temporal_partitions.get_node(id_potencia_mayor).data["esquinas"][0] + to_divide
             return id_potencia_mayor, centro
 
@@ -119,7 +120,7 @@ class Grid:
     position, 
     ):
         self.Mic_Array = MicArray(position)
-        mic_margin = position + np.array([0,50,0])
+        mic_margin = position + np.array([0,80,0])
         self.margin_dimensions[1] = self.dimensiones[1] - mic_margin[1]
 
         self.room_partitions = Tree()
