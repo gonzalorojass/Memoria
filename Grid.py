@@ -1,7 +1,9 @@
 import numpy as np
 from copy import deepcopy
 from treelib import Tree
-from GCC import *
+
+NUMBER_OF_MICROPHONES = 6
+SOUND_SPEED = 34300
 
 class Grid:
     def __init__(
@@ -32,7 +34,7 @@ class Grid:
             data={
                 "to_divide": to_divide,
                 "esquinas": esquinas_nodo,
-                "potencia": GCC(inverted_signal, esquinas_nodo, self.mic_position, fs),
+                "potencia": self.power(inverted_signal, esquinas_nodo, self.mic_position, fs),
             })
 
             for i in range(1,8):
@@ -41,7 +43,7 @@ class Grid:
                 data={
                     "to_divide": to_divide,
                     "esquinas": esquinas_nodo,
-                    "potencia": GCC(inverted_signal, esquinas_nodo, self.mic_position, fs),
+                    "potencia": self.power(inverted_signal, esquinas_nodo, self.mic_position, fs),
                 })
         else:
             esquinas_nodo_padre = self.corners(self.temporal_partitions.get_node(parent_id).data["esquinas"][0], to_divide)
@@ -51,7 +53,7 @@ class Grid:
                 data={
                     "to_divide": to_divide,
                     "esquinas": esquinas_nodo,
-                    "potencia": GCC(inverted_signal, esquinas_nodo, self.mic_position, fs),
+                    "potencia": self.power(inverted_signal, esquinas_nodo, self.mic_position, fs),
                 })
 
         for hoja in self.temporal_partitions.leaves():
@@ -102,3 +104,56 @@ class Grid:
     def reset_tree(self, count):
         self.temporal_partitions.save2file("tree"+str(count)+".txt")
         self.temporal_partitions = deepcopy(self.room_partitions)
+
+    def power(
+        correlated,
+        corners_to_check,
+        mic_position,
+        fs = 44100,
+    ):
+        potencia = 0
+        if isinstance(correlated, np.ndarray):
+            n=0
+            for i in range(0, NUMBER_OF_MICROPHONES-1):
+                for j in range (i+1, NUMBER_OF_MICROPHONES):
+                    for corner in corners_to_check:
+                        tau = -round(fs*(np.linalg.norm(corner-mic_position[i]) -
+                        np.linalg.norm(corner-mic_position[j]))/SOUND_SPEED)
+
+                        if((corner == corners_to_check[0]).all()):
+                            tau_min = tau_max = tau
+
+                        if tau < -(correlated[n].size):
+                            tau = tau + correlated[n].size
+                        if tau < 0:
+                            tau = tau-1
+
+                        if tau < tau_min:
+                            tau_min = tau
+                        if tau > tau_max:
+                            tau_max = tau
+
+                    for k in range(int(tau_min), int(tau_max)+1):
+                        potencia += np.real(correlated[n][k])
+
+                    n = n + 1
+
+            return potencia
+
+        else:
+            print("Correlated debe ser del tipo numpy.ndarray")
+            return None
+
+    def GCC(
+    mic_data,
+    mic_n,
+    ):
+        invXi_Xj = np.zeros((sum(range(mic_n)), mic_data[0].size))
+        n = 0
+        for i in range(0, mic_n-1):
+            for j in range (i+1, mic_n):
+                
+                Xi_Xj = np.fft.rfft(mic_data[i], n = mic_data[i].size)*np.conj(np.fft.rfft(mic_data[j], n = mic_data[j].size))
+                peso = 1/(abs(Xi_Xj))
+                invXi_Xj[n] = np.fft.irfft(Xi_Xj*peso, n = mic_data[0].size)
+                n += 1

@@ -1,6 +1,5 @@
 from Grid import *
 from Mic_array import *
-from GCC import *
 from Camara import *
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
