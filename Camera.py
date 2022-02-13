@@ -6,7 +6,7 @@ import math
 HORIZONTAL_CAMERA_SPEED = 40/math.pi
 VERTICAL_CAMERA_SPEED = 10.8/math.pi
 
-class Camara:
+class Camera:
     def __init__(self, camera_position):
         self.mycam = FoscamCamera('192.168.1.100', 88, 'admin1', 'admin1')
         self.current_direction = np.array([0,0,math.pi/2])
@@ -24,7 +24,7 @@ class Camara:
         position_diff = position - self.camera_position
 
         xy = position_diff[0]**2 + position_diff[1]**2
-        r = np.sqrt(xy + position_diff[2]**2)            ## ignorado por ahora
+        r = np.sqrt(xy + position_diff[2]**2)
         theta = np.arctan(np.array([position_diff[2]/np.sqrt(xy)])) 
         azimuth = np.arctan(np.array([position_diff[1]/position_diff[0]])) + (0 if (position_diff[0] > 0) else math.pi)
         

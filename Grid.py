@@ -135,11 +135,8 @@ class Grid:
 
                     for k in range(int(tau_min), int(tau_max)+1):
                         potencia += np.real(correlated[n][k])
-
                     n = n + 1
-
             return potencia
-
         else:
             print("Correlated debe ser del tipo numpy.ndarray")
             return None
@@ -152,8 +149,8 @@ class Grid:
         n = 0
         for i in range(0, mic_n-1):
             for j in range (i+1, mic_n):
-                
                 Xi_Xj = np.fft.rfft(mic_data[i], n = mic_data[i].size)*np.conj(np.fft.rfft(mic_data[j], n = mic_data[j].size))
                 peso = 1/(abs(Xi_Xj))
                 invXi_Xj[n] = np.fft.irfft(Xi_Xj*peso, n = mic_data[0].size)
                 n += 1
+        return invXi_Xj

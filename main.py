@@ -1,6 +1,6 @@
 from Grid import *
 from Mic_array import *
-from Camara import *
+from Camera import *
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
@@ -9,7 +9,7 @@ import timeit                            # PARA CALCULAR TIEMPO
 NUMBER_OF_MICROPHONES = 6
 ####    INICIALIZACIÓN DE GRILLA     ####
 grid1 = Grid.Grid(x_room =220 , y_room =495 , z_room = 212)
-camara = Camara(np.array([105,0,0]))
+camara = Camera(np.array([105,0,0]))
 mic_position = np.array([105,20,0])
 posicion_estimada = np.zeros(3)
 
@@ -45,7 +45,6 @@ not_mic = np.array([0,1])
 mic_data = np.zeros((6, CHUNK))
 count = 0
 input("Press Enter to start")
-sleep(10)
 with MicArray(grid=grid1, center=mic_position, rate = RESPEAKER_RATE, chunk_size = CHUNK) as mic:
     for chunk in mic.read_chunks():
 
@@ -62,21 +61,12 @@ with MicArray(grid=grid1, center=mic_position, rate = RESPEAKER_RATE, chunk_size
             mic_data[i] = chunk[(i+channel_0 if (i+channel_0 <= 7) else channel_0-8+i)::8]
 
         invXi_Xj = np.zeros((sum(range(NUMBER_OF_MICROPHONES)), chunk[0::8].size))
-        n = 0
-        for i in range(0, NUMBER_OF_MICROPHONES-1):
-            for j in range (i+1, NUMBER_OF_MICROPHONES):
-                
-                Xi_Xj = np.fft.rfft(mic_data[i], n = mic_data[i].size)*np.conj(np.fft.rfft(mic_data[j], n = mic_data[j].size))
-                peso = 1/(abs(Xi_Xj))
-                invXi_Xj[n] = np.fft.irfft(Xi_Xj*peso, n = chunk[0::8].size)
-                n += 1
+        invXi_Xj = grid1.GCC(mic_data, NUMBER_OF_MICROPHONES)
 
         ignore, posicion_estimada = grid1.HSRP(invXi_Xj,"room", RESPEAKER_RATE)
         stop = timeit.default_timer()
 
-        print('Time: ', stop - start)
         g.write("Tiempo de procesamientio para posicion "+str(count)+": "+str(stop - start)+"\n")
-        print(posicion_estimada)
         f.write("posicion "+str(count)+": "+str(posicion_estimada)+"\n")
         camara.point_at_location(posicion_estimada)
 
@@ -90,4 +80,3 @@ with MicArray(grid=grid1, center=mic_position, rate = RESPEAKER_RATE, chunk_size
         count = count+1
     
         input("Press Enter to continue")
-        sleep(10)
